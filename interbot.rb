@@ -1,5 +1,9 @@
 require 'cinch'
 require 'net/http'
+require 'barometer'
+require 'open-uri'
+require 'rubygems'
+require 'hpricot'
 
 bot = Cinch::Bot.new do
   configure do |c|
@@ -44,6 +48,31 @@ bot = Cinch::Bot.new do
     end
     m.reply "What about #{lunches.sort_by{rand}[0]}?"
   end
+
+  on :message, /^#{self.nick} weather$/ do |m|
+    barometer = Barometer.new("Birmingham, AL")
+    weather = barometer.measure
+    m.reply "Currently #{weather.current.temperature} and #{weather.current.icon}"
+  end
+
+  on :message, /^#{self.nick} doorman$/ do |m|
+    employee_ids = {:frankh => 9999, :davecow => 1223, :CodyC => 3994, :robbihun1 => 3938, :Ash_Work => 3974, :keithtronic => 3904}
+    emp_in, emp_out = [], []
+    employee_ids.keys.each do |employee|
+      url = "http://doorman/reports/employeeReport.aspx?employeeID=#{employee_ids[employee]}"
+      puts "#{employee}: #{url}"
+      doc = open(url) {|f| Hpricot(f)}
+      status = doc.search("#page_content > table").last.search("tr").last.search("td")[1].inner_html
+      if status.match(/In the Office/)
+        emp_in << employee
+      else
+        emp_out << employee
+      end
+    end
+    m.reply "In: #{emp_in.join(', ')}"
+    m.reply "Out:#{emp_out.join(', ')}"
+  end
+
 end
 
 bot.start
