@@ -27,7 +27,7 @@ bot = Cinch::Bot.new do
 	end
 	
 	def doorman
-  	  employee_ids = {:frankh => 9999, :davecow => 1223, :CodyC => 3994, :robbihun1 => 3938, :Ash_Work => 3974, :keithtronic => 3904, :isau => 3917, :clark => 3965, :monday => 3935}
+  	  employee_ids = {:frankh => 9999, :davecow => 1223, :CodyC => 3994, :robbihun1 => 3938, :Ash_Work => 3974, :keithtronic => 3904, :isau => 3917, :clark => 3965, :monday => 3935, :dgarv => 4051}
       emp_in, emp_out = [], []
       employee_ids.keys.each do |employee|
         url = "http://doorman/reports/employeeReport.aspx?employeeID=#{employee_ids[employee]}"
@@ -47,7 +47,7 @@ bot = Cinch::Bot.new do
   
   on :message, "hello" do |m|
     nick = m.user.nick
-    match = nick.match(/^fooo+$/)
+    match = nick.match(/^fo+$/)
 	m.reply match.nil? || match[0] != nick ? "Hello, #{nick}" : "GTFO, #{nick}"
   end
   
@@ -96,11 +96,13 @@ bot = Cinch::Bot.new do
 	end
   end
   
-  on :message, /^#{self.nick} batsignal$/ do |m|
+  on :message, /^#{self.nick} batsignal($| .*$)/ do |m, destination|
 	weather = Barometer.new("Birmingham, AL").measure
 	location = weather.wet? ? 'by the door (chance of rain)' : 'outside'
 	emps = doorman
+	destination = "for #{destination}" unless destination == ''
 	employees = {
+				  #:dgarv => '',
 	              :frankh => '2056125241@txt.att.net',
 	              :davecow => '2056170775@txt.att.net',
 	              :CodyC => '2059601539@txt.att.net',
@@ -115,7 +117,7 @@ bot = Cinch::Bot.new do
       unless employees[e].nil?
         gmail.deliver do
   	      to employees[e]
-    	  body "Lunch train is leaving - meet #{location}"
+    	  body "Lunch train is leaving #{destination} - meet #{location}"
     	end
       end
     end
@@ -123,8 +125,20 @@ bot = Cinch::Bot.new do
 	m.reply "Messages sent"
   end
   
-  on :channel, /^\/(\w*) rolls dice$/ do |m|
-    m.reply "#{m.user.nick} rolls a #{(1..6).sort_by{rand}.first}"
+  on :channel, /^#{self.nick} roll (\d*)d(\d+)($|[\+\-]\d+$)/ do |m, n, d, mod|
+    total = 0;
+	dice = n.to_i == 0 ? 1 : [n.to_i.abs, 10].min
+	
+    dice.times do
+	  result = (Random.new).rand(1..d.to_i.abs)
+      m.reply "#{m.user.nick} rolls a #{result}"
+	  total += result
+	end
+	unless mod.to_i == 0
+	  m.reply "Adding #{mod}"
+	  total += mod.to_i
+	end
+	m.reply "Total: #{total}" if dice > 1 || mod.to_i != 0
   end
   
   on :message, /^#{self.nick} urban (.*)/ do |m, term|
