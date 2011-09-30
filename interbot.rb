@@ -8,13 +8,14 @@ require 'whois'
 require 'twilio-ruby'
 require 'nokogiri'
 require 'cgi'
-
-#ix2bot@gmail.com/interbot11
+require 'gmail' #ix2bot@gmail.com/interbot11
 
 bot = Cinch::Bot.new do
+  @bot = self;
+
   configure do |c|
     c.server = 'irc.freenode.org'
-    c.channels = ['#ix2-bot']
+    c.channels = ['#ix2-bot','#ix2-2']
     c.nick = 'interbot'
   end
 
@@ -24,16 +25,30 @@ bot = Cinch::Bot.new do
 	  puts url
 	  CGI.unescape_html Nokogiri::HTML(open(url)).at("div.definition").text.gsub(/\s+/, ' ') rescue nil
 	end
+	
+	def doorman
+  	  employee_ids = {:frankh => 9999, :davecow => 1223, :CodyC => 3994, :robbihun1 => 3938, :Ash_Work => 3974, :keithtronic => 3904, :isau => 3917, :clark => 3965, :monday => 3935}
+      emp_in, emp_out = [], []
+      employee_ids.keys.each do |employee|
+        url = "http://doorman/reports/employeeReport.aspx?employeeID=#{employee_ids[employee]}"
+        puts "#{employee}: #{url}"
+        doc = open(url) {|f| Hpricot(f)}
+	    element = doc.search("#page_content > table").last.search("tr").last.search("td")[1]
+        status = element.nil? ? "" : element.inner_html
+        if status.match(/In the Office/)
+          emp_in << employee
+        else
+          emp_out << employee
+        end
+      end
+      return {:in => emp_in, :out => emp_out}
+	end
   end
   
   on :message, "hello" do |m|
     nick = m.user.nick
-    match = nick.match(/fooo+/)
-    if match.nil? || match[0] != nick
-      m.reply "Hello, #{nick}"
-    else
-      m.reply "GTFO, #{nick}"
-    end
+    match = nick.match(/^fooo+$/)
+	m.reply match.nil? || match[0] != nick ? "Hello, #{nick}" : "GTFO, #{nick}"
   end
   
   on :message, /^#{self.nick} push (.*) to (.*)$/ do |m, project_name, destination|
@@ -54,7 +69,7 @@ bot = Cinch::Bot.new do
   on :message, /^#{self.nick} pick lunch$/ do |m|
     lunches = ["Sitar", "Jason's Deli", "Dreamland", "Sweet Tea", "Rogue", "Acapulco", "Rojo", "Niki's West", "Moe's BBQ"]
     if [1,4].include?(Time.now.wday)
-      10.times do
+      20.times do
         lunches << "Sitar"
       end
     end
@@ -68,22 +83,9 @@ bot = Cinch::Bot.new do
   end
 
   on :message, /^#{self.nick} doorman$/ do |m|
-    employee_ids = {:frankh => 9999, :davecow => 1223, :CodyC => 3994, :robbihun1 => 3938, :Ash_Work => 3974, :keithtronic => 3904, :isau => 3917}
-    emp_in, emp_out = [], []
-    employee_ids.keys.each do |employee|
-      url = "http://doorman/reports/employeeReport.aspx?employeeID=#{employee_ids[employee]}"
-      puts "#{employee}: #{url}"
-      doc = open(url) {|f| Hpricot(f)}
-	  element = doc.search("#page_content > table").last.search("tr").last.search("td")[1]
-      status = element.nil? ? "" : element.inner_html
-      if status.match(/In the Office/)
-        emp_in << employee
-      else
-        emp_out << employee
-      end
-    end
-    m.reply "In: #{emp_in.join(', ')}"
-    m.reply "Out: #{emp_out.join(', ')}"
+    emps = doorman
+    m.reply "In: #{emps[:in].join(', ')}"
+    m.reply "Out: #{emps[:out].join(', ')}"
   end
 
   on :message, /^#{self.nick} whois (.*)$/ do |m, domain|
@@ -97,25 +99,38 @@ bot = Cinch::Bot.new do
   on :message, /^#{self.nick} batsignal$/ do |m|
 	weather = Barometer.new("Birmingham, AL").measure
 	location = weather.wet? ? 'by the door (chance of rain)' : 'outside'
-  
-    client = Twilio::REST::Client.new 'ACae4d9c9370074f4eb5b58547fce1fabb', '24d65261cae54e6cea503b9b5f34f8d6'
-	client.account.sms.messages.create(
-	  :from => '+14155992671',
-	  :to => '+12055782728',
-	  :body => "Lunch train is leaving - meet #{location}"
-    )
+	emps = doorman
+	employees = {
+	              :frankh => '2056125241@txt.att.net',
+	              :davecow => '2056170775@txt.att.net',
+	              :CodyC => '2059601539@txt.att.net',
+	              :Ash_Work => '2056173946@txt.att.net',
+	              :keithtronic => '3346692522@messaging.sprintpcs.com',
+	              :isau => '2056170775@txt.att.net',
+	              :clark => '3342216642@vtext.com',
+	              :robbihun1 => '2053839379@txt.att.net'
+				}
+	gmail = Gmail.connect('ix2bot@gmail.com', 'interbot11')
+    emps[:in].each do |e|
+      unless employees[e].nil?
+        gmail.deliver do
+  	      to employees[e]
+    	  body "Lunch train is leaving - meet #{location}"
+    	end
+      end
+    end
+    gmail.logout
 	m.reply "Messages sent"
   end
   
-  #this doesn't seem to trigger yet
-  on :action, /rolls dice/ do |m|
+  on :channel, /^\/(\w*) rolls dice$/ do |m|
     m.reply "#{m.user.nick} rolls a #{(1..6).sort_by{rand}.first}"
   end
   
   on :message, /^#{self.nick} urban (.*)/ do |m, term|
     m.reply(urban_dict(term) || "No results found")
   end
-  
+
 end
 
 bot.start
