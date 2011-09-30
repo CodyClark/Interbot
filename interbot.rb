@@ -4,6 +4,10 @@ require 'barometer'
 require 'open-uri'
 require 'rubygems'
 require 'hpricot'
+require 'whois'
+require 'twilio-ruby'
+
+#ix2bot@gmail.com/interbot11
 
 bot = Cinch::Bot.new do
   configure do |c|
@@ -73,6 +77,28 @@ bot = Cinch::Bot.new do
     m.reply "Out:#{emp_out.join(', ')}"
   end
 
+  on :message, /^#{self.nick} whois (.*)$/ do |m|
+    domain = m.params[1].scan(/whois (.*)$/)[0][0]
+    r = Whois.whois(domain)
+	m.reply "#{domain} is available" if r.available?
+	if (r.registered?)
+	  m.reply "#{domain} was registered on #{r.created_on.strftime("%m%d/%Y")} by #{r.admin_contact.name} (#{r.admin_contact.organization}) through #{r.registrar.name}"
+	end
+  end
+  
+  on :message, /^#{self.nick} batsignal$/ do |m|
+	weather = Barometer.new("Birmingham, AL").measure
+	location = weather.wet? ? 'by the door (chance of rain)' : 'outside'
+  
+    client = Twilio::REST::Client.new 'ACae4d9c9370074f4eb5b58547fce1fabb', '24d65261cae54e6cea503b9b5f34f8d6'
+	client.account.sms.messages.create(
+	  :from => '+14155992671',
+	  :to => '+12055782728',
+	  :body => "Lunch train is leaving - meet #{location}"
+    )
+	m.reply "Messages sent"
+  end
+  
 end
 
 bot.start
