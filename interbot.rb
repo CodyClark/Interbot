@@ -26,17 +26,15 @@ bot = Cinch::Bot.new do
     end
   end
   
-  on :message, /^#{self.nick} push (.*) to (.*)$/ do |m|
-    matches = m.params[1].scan(/push (.*) to (.*)/)[0]
-    project_name = matches.join(' ')
+  on :message, /^#{self.nick} push (.*) to (.*)$/ do |m, project_name, destination|
+    project_name = "#{project_name} #{destination}"
     m.reply "Pushing #{matches[0]} to #{matches[1]} by building #{project_name} on Hudson"
     url = URI.parse("http://jaws:8080/job/#{project_name.gsub(' ', '%20')}/build?delay=0sec")
     request = Net::HTTP::Get.new(url.path)
     Net::HTTP.start(url.host, url.port) {|http| http.request(request)}
   end
 
-  on :message, /^#{self.nick} build (.*)$/ do |m|
-    project_name = m.params[1].scan(/build (.*)/)[0][0]
+  on :message, /^#{self.nick} build (.*)$/ do |m, project_name|
     m.reply "Building #{project_name}"
     url = URI.parse("http://jaws:8080/job/#{project_name.gsub(' ', '%20')}/build?delay=0sec")
     request = Net::HTTP::Get.new(url.path)
@@ -77,8 +75,7 @@ bot = Cinch::Bot.new do
     m.reply "Out:#{emp_out.join(', ')}"
   end
 
-  on :message, /^#{self.nick} whois (.*)$/ do |m|
-    domain = m.params[1].scan(/whois (.*)$/)[0][0]
+  on :message, /^#{self.nick} whois (.*)$/ do |m, domain|
     r = Whois.whois(domain)
 	m.reply "#{domain} is available" if r.available?
 	if (r.registered?)
@@ -97,6 +94,11 @@ bot = Cinch::Bot.new do
 	  :body => "Lunch train is leaving - meet #{location}"
     )
 	m.reply "Messages sent"
+  end
+  
+  #this doesn't seem to trigger yet
+  on :action, /rolls dice/ do |m|
+    m.reply "#{m.user.nick} rolls a #{(1..6).sort_by{rand}.first}"
   end
   
 end
