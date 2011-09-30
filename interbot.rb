@@ -112,7 +112,7 @@ bot = Cinch::Bot.new do
   end
   
   on :message, /^#{self.nick} urban (.*)/ do |m, term|
-    m.reply(urban_dict(term) || "No results found", true)
+    m.reply(urban_dict(term) || "No results found")
   end
   
 end
