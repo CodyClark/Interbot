@@ -6,6 +6,8 @@ require 'rubygems'
 require 'hpricot'
 require 'whois'
 require 'twilio-ruby'
+require 'nokogiri'
+require 'cgi'
 
 #ix2bot@gmail.com/interbot11
 
@@ -16,6 +18,14 @@ bot = Cinch::Bot.new do
     c.nick = 'interbot'
   end
 
+  helpers do
+    def urban_dict(query)
+	  url = "http://www.urbandictionary.com/define.php?term=#{CGI.escape(query)}"
+	  puts url
+	  CGI.unescape_html Nokogiri::HTML(open(url)).at("div.definition").text.gsub(/\s+/, ' ') rescue nil
+	end
+  end
+  
   on :message, "hello" do |m|
     nick = m.user.nick
     match = nick.match(/fooo+/)
@@ -99,6 +109,10 @@ bot = Cinch::Bot.new do
   #this doesn't seem to trigger yet
   on :action, /rolls dice/ do |m|
     m.reply "#{m.user.nick} rolls a #{(1..6).sort_by{rand}.first}"
+  end
+  
+  on :message, /^#{self.nick} urban (.*)/ do |m, term|
+    m.reply(urban_dict(term) || "No results found", true)
   end
   
 end
