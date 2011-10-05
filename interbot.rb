@@ -47,7 +47,7 @@ bot = Cinch::Bot.new do
   
   on :message, "hello" do |m|
     nick = m.user.nick
-    match = nick.match(/^fo+$/)
+    match = nick.match(/^fo+\d?$/)
 	m.reply match.nil? || match[0] != nick ? "Hello, #{nick}" : "GTFO, #{nick}"
   end
   
@@ -67,7 +67,7 @@ bot = Cinch::Bot.new do
   end
 
   on :message, /^#{self.nick} pick lunch$/ do |m|
-    lunches = ["Sitar", "Jason's Deli", "Dreamland", "Sweet Tea", "Rogue", "Acapulco", "Rojo", "Niki's West", "Moe's BBQ"]
+    lunches = ["Sitar", "Jason's Deli", "Dreamland", "Sweet Tea", "Rogue", "Acapulco", "Rojo", "Niki's West", "Moe's BBQ", "Mexico Lindo"]
     if [1,4].include?(Time.now.wday)
       20.times do
         lunches << "Sitar"
@@ -76,10 +76,19 @@ bot = Cinch::Bot.new do
     m.reply "What about #{lunches.sort_by{rand}[0]}?"
   end
 
-  on :message, /^#{self.nick} weather$/ do |m|
-    barometer = Barometer.new("Birmingham, AL")
+  on :message, /^#{self.nick} weather($| .*$)/ do |m, location|
+    location = "Birmingham, AL" if location ==''
+    barometer = Barometer.new(location)
     weather = barometer.measure
     m.reply "Currently #{weather.current.temperature} and #{weather.current.icon}"
+  end
+  
+  on :message, /^#{self.nick} forecast($| .*$)/ do |m, location|
+    location = "Birmingham, AL" if location == ''
+    barometer = Barometer.new(location)
+    weather = barometer.measure
+    m.reply "Today: #{weather.forecast[0].icon}. High of #{weather.forecast[0].high}, low of #{weather.forecast[0].low}. Sunset at #{weather.forecast[0].sun.set}"
+    m.reply "Tomorrow: #{weather.forecast[1].icon}. High of #{weather.forecast[1].high}, low of #{weather.forecast[1].low}. Sunset at #{weather.forecast[1].sun.set}"
   end
 
   on :message, /^#{self.nick} doorman$/ do |m|
