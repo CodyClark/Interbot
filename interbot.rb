@@ -15,7 +15,7 @@ bot = Cinch::Bot.new do
 
   configure do |c|
     c.server = 'irc.freenode.org'
-    c.channels = ['#ix2-bot','#ix2-2']
+    c.channels = ['#ix2-bot','#ix2-2','#ix2-github']
     c.nick = 'interbot'
   end
 
@@ -27,7 +27,7 @@ bot = Cinch::Bot.new do
 	end
 	
 	def doorman
-  	  employee_ids = {:frankh => 9999, :davecow => 1223, :CodyC => 3994, :robbihun1 => 3938, :Ash_Work => 3974, :keithtronic => 3904, :isau => 3917, :clark => 3965, :monday => 3935, :dgarv => 4051}
+  	  employee_ids = {:frankh => 9999, :davecow => 1223, :CodyC => 3994, :robbihun => 3938, :Ash_Work => 3974, :keithtronic => 3904, :isau => 3917, :clark => 3965, :dgarv => 4051}
       emp_in, emp_out = [], []
       employee_ids.keys.each do |employee|
         url = "http://doorman/reports/employeeReport.aspx?employeeID=#{employee_ids[employee]}"
@@ -67,8 +67,8 @@ bot = Cinch::Bot.new do
   end
 
   on :message, /^#{self.nick} pick lunch$/ do |m|
-    lunches = ["Sitar", "Jason's Deli", "Dreamland", "Sweet Tea", "Rogue", "Acapulco", "Rojo", "Niki's West", "Moe's BBQ", "Mexico Lindo"]
-    if [1,4].include?(Time.now.wday)
+    lunches = ["Sitar", "Jason's Deli", "Dreamland", "Sweet Tea", "Rogue", "Acapulco", "Rojo", "Niki's West", "Moe's BBQ", "Mexico Lindo", "Jimmy John's", "Homewood Diner", "Sarris"]
+    if [2,4].include?(Time.now.wday)
       20.times do
         lunches << "Sitar"
       end
@@ -106,6 +106,9 @@ bot = Cinch::Bot.new do
   end
   
   on :message, /^#{self.nick} batsignal($| .*$)/ do |m, destination|
+    match = m.user.nick.match(/^fo+\d?$/)
+	return unless match.nil? || match[0] != m.user.nick
+
 	weather = Barometer.new("Birmingham, AL").measure
 	location = weather.wet? ? 'by the door (chance of rain)' : 'outside'
 	emps = doorman
@@ -119,7 +122,7 @@ bot = Cinch::Bot.new do
 	              :keithtronic => '3346692522@messaging.sprintpcs.com',
 	              :isau => '2056170775@txt.att.net',
 	              :clark => '3342216642@vtext.com',
-	              :robbihun1 => '2053839379@txt.att.net'
+	              :robbihun => '2053839379@txt.att.net'
 				}
 	gmail = Gmail.connect('ix2bot@gmail.com', 'interbot11')
     emps[:in].each do |e|
@@ -134,7 +137,7 @@ bot = Cinch::Bot.new do
 	m.reply "Messages sent"
   end
   
-  on :channel, /^#{self.nick} roll (\d*)d(\d+)($|[\+\-]\d+$)/ do |m, n, d, mod|
+  on :message, /^#{self.nick} roll (\d*)d(\d+)($|[\+\-]\d+$)/ do |m, n, d, mod|
     total = 0;
 	dice = n.to_i == 0 ? 1 : [n.to_i.abs, 10].min
 	
@@ -154,6 +157,58 @@ bot = Cinch::Bot.new do
     m.reply(urban_dict(term) || "No results found")
   end
 
+  on :message, /^#{self.nick} xkcd/ do |m|
+	url = URI.parse('http://dynamic.xkcd.com/random/comic/')
+	request = Net::HTTP::Get.new(url.path)
+	response = Net::HTTP.start(url.host, url.port) {|http| http.request(request)}
+	m.reply response.header['location']
+  end
+  
+  on :message, /haters .*hate/ do |m|
+    haters = [
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2010/06/haters-gonna-hate-rubberband-ball.jpg", 
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2010/06/haters-gonna-hate-cat.jpg", 
+				"http://jesad.com/img/life/haters-gonna-hate/haters-gonna-hate01.jpg", 
+				"http://i671.photobucket.com/albums/vv78/Sinsei55/HatersGonnaHatePanda.jpg", 
+				"http://24.media.tumblr.com/tumblr_lltwmdVpoL1qekprfo1_500.gif",
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2011/08/haters-gonna-hate-dog-walker.jpg",
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2011/06/haters-gonna-hate-chick.jpg",
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2011/04/elf-dog.jpg",
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2011/03/haters-gonna-hate-look-at-this-dog.jpg",
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2011/02/haters-gonna-hate-wwf.gif",
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2011/01/haters_gonna_hate_mario_walking.gif",
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2010/06/haters-gonna-hate-oldschool.jpg",
+				"http://www.hatersgoingtohate.com/wp-content/uploads/2010/06/haters-gonna-hate-eagle.jpg"
+			]
+	m.reply haters.sort_by{rand}[0]
+  end
+  
+  on :message, /^([sS]hould|[wW]ill|[iI]s|[dD]id|[hH]as).+\?$/ do |m|
+	responses = [
+					"Signs point to yes",
+					"Yes",
+					"Reply hazy, try again",
+					"Without a doubt",
+					"My sources say no",
+					"As I see it, yes",
+					"You may rely on it",
+					"Concentrate and ask again",
+					"Outlook not so good",
+					"It is decidedly so",
+					"Better not tell you now",
+					"Very doubtful",
+					"Yes - definitely",
+					"It is certain",
+					"Cannot predict now",
+					"Most likely",
+					"Ask again later",
+					"My reply is no",
+					"Outlook good",
+					"Don't count on it"
+				]
+	m.reply responses.sort_by{rand}[0]
+  end
+  
 end
 
 bot.start
