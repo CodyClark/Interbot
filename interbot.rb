@@ -220,6 +220,10 @@ bot = Cinch::Bot.new do
 	m.reply url
   end
   
+  on :message, /\bbees\b/ do |m|
+	m.reply "OH, NO! NOT THE BEES! NOT THE BEES! AAAAAHHHHH!"
+  end
+  
 end
 
 bot.start
