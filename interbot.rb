@@ -101,7 +101,7 @@ bot = Cinch::Bot.new do
     r = Whois.whois(domain)
 	m.reply "#{domain} is available" if r.available?
 	if (r.registered?)
-	  m.reply "#{domain} was registered on #{r.created_on.strftime("%m%d/%Y")} by #{r.admin_contact.name} (#{r.admin_contact.organization}) through #{r.registrar.name}"
+	  m.reply "#{domain} was registered on #{r.created_on.strftime("%m/%d/%Y")} by #{r.admin_contact.name} (#{r.admin_contact.organization}) through #{r.registrar.name}"
 	end
   end
   
@@ -115,7 +115,7 @@ bot = Cinch::Bot.new do
 	destination = "for #{destination}" unless destination == ''
 	employees = {
 				  #:dgarv => '',
-	              :frankh => '2056125241@txt.att.net',
+	              #:frankh => '2056125241@txt.att.net',
 	              :davecow => '2056170775@txt.att.net',
 	              :CodyC => '2059601539@txt.att.net',
 	              :Ash_Work => '2056173946@txt.att.net',
@@ -183,7 +183,7 @@ bot = Cinch::Bot.new do
 	m.reply haters.sort_by{rand}[0]
   end
   
-  on :message, /^([sS]hould|[wW]ill|[iI]s|[dD]id|[hH]as).+\?$/ do |m|
+  on :message, /^([sS]hould|[wW]ill|[iI]s|[dD]id|[hH]as|[dD]oes|[aA]re|[dD]o) .+\?$/ do |m|
 	responses = [
 					"Signs point to yes",
 					"Yes",
@@ -207,6 +207,17 @@ bot = Cinch::Bot.new do
 					"Don't count on it"
 				]
 	m.reply responses.sort_by{rand}[0]
+  end
+  
+  on :message, /^[Aa]chievement [U|u]nlocked: (.*)/ do |m, achievement|
+	url = "http://achievement-unlocked.heroku.com/xbox/#{URI.escape(achievement)}.png"
+	m.reply url
+  end
+  
+  on :message, /^[Aa]cheivement [U|u]nlocked:/ do |m|
+	title = "L2Spell, #{m.user.nick}"
+	url = "http://achievement-unlocked.heroku.com/xbox/#{URI.escape(title)}.png"
+	m.reply url
   end
   
 end
