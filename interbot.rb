@@ -224,6 +224,11 @@ bot = Cinch::Bot.new do
 	m.reply "OH, NO! NOT THE BEES! NOT THE BEES! AAAAAHHHHH!"
   end
   
+  on :message, "artfart" do |m|
+	doc = Hpricot(open("http://www.asciiartfarts.com/random.cgi")).search('pre').last
+	m.reply doc
+  end
+  
 end
 
 bot.start
